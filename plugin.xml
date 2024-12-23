@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<plugin id="com.kelter.chromara" version="1.0.0" xmlns="http://apache.org/cordova/ns/plugins/1.0" xmlns:android="http://schemas.android.com/apk/res/android">
+<plugin id="cordova-plugin-chromara" version="1.0.0" xmlns="http://apache.org/cordova/ns/plugins/1.0" xmlns:android="http://schemas.android.com/apk/res/android">
     <name>Chromara</name>
     <description>A minimalist Cordova Camera Plugin inspired by Process Zero.</description>
     <license>MIT</license>
@@ -24,5 +24,10 @@
         </config-file>
 
         <source-file src="src/android/Chromara.java" target-dir="src/com/kelter/chromara" />
+
+        <!-- Add the feature element to map the JS interface to the native class -->
+        <feature name="Chromara">
+            <param name="android-package" value="com.kelter.chromara.Chromara" />
+        </feature>
     </platform>
 </plugin>

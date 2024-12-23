@@ -46,8 +46,7 @@ public class Chromara extends CordovaPlugin {
 
     private CallbackContext savedCallbackContext; // Added declaration
 
-     // Removed unused 'self' variable
-    // private CordovaPlugin self = this;
+ 
 
     @Override
     public void initialize(CordovaInterface cordova, CordovaWebView webView) {
