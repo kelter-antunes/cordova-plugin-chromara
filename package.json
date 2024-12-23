@@ -1,0 +1,12 @@
+{
+    "name": "cordova-plugin-chromara",
+    "version": "1.0.0",
+    "description": "A Cordova plugin for Chromara functionality",
+    "cordova": {
+      "id": "cordova-plugin-chromara",
+      "platforms": ["android"]
+    },
+    "author": "Miguel 'Kelter' Antunes",
+    "license": "MIT"
+  }
+  
