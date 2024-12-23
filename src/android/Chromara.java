@@ -18,25 +18,25 @@ import android.hardware.camera2.CameraCaptureSession;
 import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CameraManager;
+import android.hardware.camera2.CameraMetadata;
 import android.hardware.camera2.CaptureRequest;
 import android.hardware.camera2.StreamConfigurationMap;
-import android.hardware.camera2.CameraMetadata;
+import android.hardware.camera2.TotalCaptureResult;
 import android.media.Image;
 import android.media.ImageReader;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Environment;
 import android.provider.MediaStore;
 import android.util.Size;
 import android.util.Log;
 import android.view.Surface;
-import android.view.SurfaceTexture;
 import android.view.TextureView;
+import android.view.TextureView.SurfaceTextureListener;
+import android.graphics.SurfaceTexture;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
-// Removed @RequiresApi annotation as minSdkVersion is now 34
-// If needed, you can use @TargetApi(34) or a custom annotation
+import androidx.core.app.ActivityCompat;
 
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaInterface;
@@ -57,11 +57,6 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
-
-
-import androidx.core.app.ActivityCompat;
-import android.view.TextureView.SurfaceTextureListener;
-import android.view.SurfaceTexture;
 
 public class Chromara extends CordovaPlugin {
 
@@ -139,13 +134,17 @@ public class Chromara extends CordovaPlugin {
             cameraId = manager.getCameraIdList()[0]; // Rear camera
             CameraCharacteristics characteristics = manager.getCameraCharacteristics(cameraId);
 
-            // Get supported JPEG sizes
             StreamConfigurationMap map = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
+            if (map == null) {
+                callbackContext.error("Cannot get configuration map.");
+                return;
+            }
+
             jpegSize = Collections.max(
                     Arrays.asList(map.getOutputSizes(ImageFormat.JPEG)),
                     new CompareSizesByArea()
             );
-            // Get RAW sizes if supported
+
             if (map.isOutputSupportedFor(ImageFormat.RAW_SENSOR)) {
                 rawSize = Collections.max(
                         Arrays.asList(map.getOutputSizes(ImageFormat.RAW_SENSOR)),
@@ -410,37 +409,25 @@ public class Chromara extends CordovaPlugin {
     }
 
     private Bitmap applyHalationEffect(Bitmap src) {
-        // Create a blurred version of the original bitmap
         Bitmap blurredBitmap = Bitmap.createBitmap(src.getWidth(), src.getHeight(), src.getConfig());
         Canvas canvas = new Canvas(blurredBitmap);
         Paint paint = new Paint();
 
-        // Use different blur approach for compatibility
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            // Android 12 (API 31) and above can use RenderEffect
-            RenderEffect blurEffect = RenderEffect.createBlurEffect(10f, 10f, Shader.TileMode.CLAMP);
+        RenderEffect blurEffect = RenderEffect.createBlurEffect(10f, 10f, Shader.TileMode.CLAMP);
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
             paint.setRenderEffect(blurEffect);
-        } else {
-            // For older versions, use a simpler blur effect
-            paint.setMaskFilter(new BlurMaskFilter(10f, BlurMaskFilter.Blur.NORMAL));
         }
 
-        // Draw the original bitmap onto the blurred canvas
         canvas.drawBitmap(src, 0, 0, paint);
 
-        // Create a new bitmap to hold the final image
         Bitmap finalImage = Bitmap.createBitmap(src.getWidth(), src.getHeight(), src.getConfig());
         Canvas finalCanvas = new Canvas(finalImage);
         Paint blendPaint = new Paint();
-        blendPaint.setAlpha(80); // Adjust opacity as needed
+        blendPaint.setAlpha(80);
 
-        // Draw the original image
         finalCanvas.drawBitmap(src, 0, 0, null);
-
-        // Overlay the blurred image to create the halation effect
         finalCanvas.drawBitmap(blurredBitmap, 0, 0, blendPaint);
 
-        // Recycle the intermediate blurred bitmap to free memory
         blurredBitmap.recycle();
 
         return finalImage;
