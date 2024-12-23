@@ -14,7 +14,7 @@
             <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
             <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
         </config-file>
-        <source-file src="src/android/Chromara.java" target-dir="src/com/example/chromara" />
+        <source-file src="src/android/Chromara.java" target-dir="src/com/kelter/chromara" />
         <!-- Include any additional dependencies here -->
     </platform>
     <js-module src="www/chromara.js" name="chromara">

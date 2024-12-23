@@ -1,4 +1,4 @@
-package com.example.chromara;
+package com.kelter.chromara;
 
 import android.Manifest;
 import android.app.Activity;
