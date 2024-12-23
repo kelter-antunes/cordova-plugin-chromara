@@ -1,0 +1,7 @@
+android {
+    compileSdkVersion 34 // Ensure this is >= 31
+    defaultConfig {
+        minSdkVersion 31  // Ensure this is >= 31
+        targetSdkVersion 34 // Ensure this is >= 31
+    }
+}

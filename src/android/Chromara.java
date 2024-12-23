@@ -4,8 +4,20 @@ import android.Manifest;
 import android.app.Activity;
 import android.content.ContentValues;
 import android.content.pm.PackageManager;
-import android.graphics.*;
-import android.hardware.camera2.*;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
+import android.graphics.ColorMatrix;
+import android.graphics.ColorMatrixColorFilter;
+import android.graphics.Paint;
+import android.graphics.RenderEffect;
+import android.graphics.Shader;
+import android.hardware.camera2.CameraAccessException;
+import android.hardware.camera2.CameraCaptureSession;
+import android.hardware.camera2.CameraCharacteristics;
+import android.hardware.camera2.CameraDevice;
+import android.hardware.camera2.CameraManager;
+import android.hardware.camera2.CaptureRequest;
 import android.media.Image;
 import android.media.ImageReader;
 import android.net.Uri;
@@ -18,19 +30,31 @@ import android.view.Surface;
 import android.view.SurfaceTexture;
 import android.view.TextureView;
 import android.widget.Toast;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.core.app.ActivityCompat;
-import org.apache.cordova.*;
+
+import org.apache.cordova.CallbackContext;
+import org.apache.cordova.CordovaInterface;
+import org.apache.cordova.CordovaPlugin;
+import org.apache.cordova.CordovaWebView;
 import org.json.JSONArray;
 import org.json.JSONException;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.List;
+import java.util.Locale;
 
-@RequiresApi(api = Build.VERSION_CODES.S) // API 31+
+@RequiresApi(api = Build.VERSION_CODES.S) // API Level 31+
 public class Chromara extends CordovaPlugin {
 
     private static final String TAG = "ChromaraPlugin";
@@ -44,7 +68,7 @@ public class Chromara extends CordovaPlugin {
     private Size rawSize;
     private Activity activity;
     private TextureView textureView;
-    private SurfaceTextureListener surfaceTextureListener;
+    private SurfaceTextureListenerImpl surfaceTextureListener;
     private boolean isCameraOpened = false;
 
     @Override

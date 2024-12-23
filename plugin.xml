@@ -8,6 +8,7 @@
         <engine name="cordova" version=">=10.0.0" />
     </engines>
     <platform name="android">
+        <!-- Configure AndroidManifest permissions -->
         <config-file target="AndroidManifest.xml" parent="/*">
             <!-- Request necessary permissions -->
             <uses-permission android:name="android.permission.CAMERA" />
@@ -17,10 +18,20 @@
                 android:maxSdkVersion="28" />
             <!-- For Android 10+, use scoped storage -->
         </config-file>
+
+        <!-- Source file for the plugin's Java implementation -->
         <source-file src="src/android/Chromara.java" target-dir="src/com/kelter/chromara" />
-        <!-- No longer includes RenderScript files -->
-        <!-- Include any additional dependencies here -->
+
+        <!-- Include custom Gradle file -->
+        <resource-file src="scripts/build.gradle" target="app/custom-build.gradle" />
+
+        <!-- Apply the custom Gradle file in the main build.gradle -->
+        <config-file target="app/build.gradle" parent="**">
+            apply from: "app/custom-build.gradle"
+        </config-file>
     </platform>
+
+    <!-- JavaScript module for the plugin -->
     <js-module src="www/chromara.js" name="chromara">
         <clobbers target="cordova.plugins.Chromara" />
     </js-module>
