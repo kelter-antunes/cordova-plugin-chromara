@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plugin id="cordova-plugin-chromara" version="1.0.0" xmlns="http://apache.org/cordova/ns/plugins/1.0" xmlns:android="http://schemas.android.com/apk/res/android">
+    <name>Chromara</name>
+    <description>A minimalist Cordova Camera Plugin inspired by Process Zero.</description>
+    <license>MIT</license>
+    <keywords>cordova, camera, plugin, minimalist</keywords>
+    <engines>
+        <engine name="cordova" version=">=10.0.0" />
+    </engines>
+    <platform name="android">
+        <config-file target="AndroidManifest.xml" parent="/*">
+            <!-- Request necessary permissions -->
+            <uses-permission android:name="android.permission.CAMERA" />
+            <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+            <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+        </config-file>
+        <source-file src="src/android/Chromara.java" target-dir="src/com/example/chromara" />
+        <!-- Include any additional dependencies here -->
+    </platform>
+    <js-module src="www/chromara.js" name="chromara">
+        <clobbers target="cordova.plugins.Chromara" />
+    </js-module>
+</plugin>
