@@ -142,10 +142,15 @@ public class Chromara extends CordovaPlugin {
                                 parent.removeView(textureView);
                             }
 
-                            callbackContext.success("Camera preview removed.");
+                            // Only send a success callback if callbackContext is not null
+                            if (callbackContext != null) {
+                                callbackContext.success("Camera preview removed.");
+                            }
                         } catch (Exception e) {
                             Log.e(TAG, "Error removing TextureView: " + e.getMessage());
-                            callbackContext.error("Failed to remove camera preview.");
+                            if (callbackContext != null) {
+                                callbackContext.error("Failed to remove camera preview.");
+                            }
                         }
                     }
                 });
@@ -307,7 +312,8 @@ public class Chromara extends CordovaPlugin {
             imageDimension = map.getOutputSizes(SurfaceTexture.class)[0];
 
             // Check permissions again
-            if (ActivityCompat.checkSelfPermission(activity, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+            if (ActivityCompat.checkSelfPermission(activity, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED ||
+                ActivityCompat.checkSelfPermission(activity, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
                 ActivityCompat.requestPermissions(activity,
                         new String[]{Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE},
                         REQUEST_CAMERA_PERMISSION);
@@ -435,7 +441,8 @@ public class Chromara extends CordovaPlugin {
                 activity.runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        removePreview(new CallbackContext("Chromara", false, null));
+                        // Call removePreview without a CallbackContext
+                        removePreview(null);
                     }
                 });
             }
