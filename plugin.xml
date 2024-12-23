@@ -8,27 +8,19 @@
         <engine name="cordova" version=">=10.0.0" />
     </engines>
     <platform name="android">
+        
         <!-- Configure AndroidManifest permissions -->
         <config-file target="AndroidManifest.xml" parent="/*">
             <!-- Request necessary permissions -->
             <uses-permission android:name="android.permission.CAMERA" />
-            <!-- Permissions for saving images -->
-            <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
-            <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
-                android:maxSdkVersion="28" />
-            <!-- For Android 10+, use scoped storage -->
+            <!-- Removed READ and WRITE external storage permissions as they are not needed for Android 14+ -->
         </config-file>
 
         <!-- Source file for the plugin's Java implementation -->
         <source-file src="src/android/Chromara.java" target-dir="src/com/kelter/chromara" />
 
-        <!-- Include custom Gradle file -->
-        <resource-file src="scripts/build.gradle" target="app/custom-build.gradle" />
-
-        <!-- Apply the custom Gradle file in the main build.gradle -->
-        <config-file target="app/build.gradle" parent="**">
-            apply from: "app/custom-build.gradle"
-        </config-file>
+        <!-- Include build-extras.gradle -->
+        <resource-file src="scripts/build-extras.gradle" target="app/build-extras.gradle" />
     </platform>
 
     <!-- JavaScript module for the plugin -->

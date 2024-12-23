@@ -12,12 +12,15 @@ import android.graphics.ColorMatrixColorFilter;
 import android.graphics.Paint;
 import android.graphics.RenderEffect;
 import android.graphics.Shader;
+import android.graphics.ImageFormat;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
 import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CameraManager;
 import android.hardware.camera2.CaptureRequest;
+import android.hardware.camera2.StreamConfigurationMap;
+import android.hardware.camera2.CameraMetadata;
 import android.media.Image;
 import android.media.ImageReader;
 import android.net.Uri;
@@ -32,8 +35,8 @@ import android.view.TextureView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.RequiresApi;
-import androidx.core.app.ActivityCompat;
+// Removed @RequiresApi annotation as minSdkVersion is now 34
+// If needed, you can use @TargetApi(34) or a custom annotation
 
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaInterface;
@@ -42,6 +45,7 @@ import org.apache.cordova.CordovaWebView;
 import org.json.JSONArray;
 import org.json.JSONException;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
@@ -54,7 +58,11 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
-@RequiresApi(api = Build.VERSION_CODES.S) // API Level 31+
+
+import androidx.core.app.ActivityCompat;
+import android.view.TextureView.SurfaceTextureListener;
+import android.view.SurfaceTexture;
+
 public class Chromara extends CordovaPlugin {
 
     private static final String TAG = "ChromaraPlugin";
@@ -158,13 +166,11 @@ public class Chromara extends CordovaPlugin {
             }
 
             // Check permissions
-            if (ActivityCompat.checkSelfPermission(activity, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED ||
-                    ActivityCompat.checkSelfPermission(activity, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+            if (ActivityCompat.checkSelfPermission(activity, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
                 ActivityCompat.requestPermissions(activity, new String[]{
-                        Manifest.permission.CAMERA,
-                        Manifest.permission.WRITE_EXTERNAL_STORAGE
+                        Manifest.permission.CAMERA
                 }, 200);
-                callbackContext.error("Camera or storage permissions are not granted.");
+                callbackContext.error("Camera permission is not granted.");
                 return;
             }
 
@@ -409,11 +415,17 @@ public class Chromara extends CordovaPlugin {
         Canvas canvas = new Canvas(blurredBitmap);
         Paint paint = new Paint();
 
-        // Create a RenderEffect for blurring
-        RenderEffect blurEffect = RenderEffect.createBlurEffect(10f, 10f, Shader.TileMode.CLAMP);
-        paint.setRenderEffect(blurEffect);
+        // Use different blur approach for compatibility
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            // Android 12 (API 31) and above can use RenderEffect
+            RenderEffect blurEffect = RenderEffect.createBlurEffect(10f, 10f, Shader.TileMode.CLAMP);
+            paint.setRenderEffect(blurEffect);
+        } else {
+            // For older versions, use a simpler blur effect
+            paint.setMaskFilter(new BlurMaskFilter(10f, BlurMaskFilter.Blur.NORMAL));
+        }
 
-        // Draw the original bitmap onto the blurred canvas with the blur effect
+        // Draw the original bitmap onto the blurred canvas
         canvas.drawBitmap(src, 0, 0, paint);
 
         // Create a new bitmap to hold the final image
@@ -458,6 +470,7 @@ public class Chromara extends CordovaPlugin {
             out.write(bytes);
             out.close();
             Toast.makeText(activity, "Photo saved: " + fileName, Toast.LENGTH_SHORT).show();
+            callbackContext.success("Photo saved successfully.");
         } catch (IOException e) {
             Log.e(TAG, "Failed to save image: " + e.getMessage());
             callbackContext.error("Failed to save image: " + e.getMessage());
