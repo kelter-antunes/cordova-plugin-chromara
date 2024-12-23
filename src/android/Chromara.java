@@ -16,6 +16,7 @@ import android.util.Size;
 import android.util.Log;
 import android.view.Surface;
 import android.view.SurfaceTexture;
+import android.view.TextureView;
 import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
@@ -29,7 +30,7 @@ import java.nio.ByteBuffer;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
-@RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
+@RequiresApi(api = Build.VERSION_CODES.S) // API 31+
 public class Chromara extends CordovaPlugin {
 
     private static final String TAG = "ChromaraPlugin";
@@ -60,7 +61,7 @@ public class Chromara extends CordovaPlugin {
                 android.view.ViewGroup.LayoutParams.MATCH_PARENT
         ));
 
-        surfaceTextureListener = new SurfaceTextureListener();
+        surfaceTextureListener = new SurfaceTextureListenerImpl();
         textureView.setSurfaceTextureListener(surfaceTextureListener);
 
         // Add TextureView to the Activity's content view
@@ -188,8 +189,14 @@ public class Chromara extends CordovaPlugin {
                     cameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
             previewRequestBuilder.addTarget(previewSurface);
 
-            cameraDevice.createCaptureSession(Arrays.asList(previewSurface, jpegImageReader.getSurface(),
-                    rawImageReader != null ? rawImageReader.getSurface() : null),
+            List<Surface> outputSurfaces = new ArrayList<>();
+            outputSurfaces.add(previewSurface);
+            outputSurfaces.add(jpegImageReader.getSurface());
+            if (rawImageReader != null) {
+                outputSurfaces.add(rawImageReader.getSurface());
+            }
+
+            cameraDevice.createCaptureSession(outputSurfaces,
                     new CameraCaptureSession.StateCallback() {
                         @Override
                         public void onConfigured(@NonNull CameraCaptureSession session) {
@@ -373,34 +380,33 @@ public class Chromara extends CordovaPlugin {
     }
 
     private Bitmap applyHalationEffect(Bitmap src) {
-        // Simple halation effect by blurring bright areas and overlaying them with low opacity
-        // Create a copy for the glow
-        Bitmap glow = src.copy(src.getConfig(), true);
-        Canvas canvas = new Canvas(glow);
+        // Create a blurred version of the original bitmap
+        Bitmap blurredBitmap = Bitmap.createBitmap(src.getWidth(), src.getHeight(), src.getConfig());
+        Canvas canvas = new Canvas(blurredBitmap);
         Paint paint = new Paint();
-        paint.setColorFilter(new ColorMatrixColorFilter(new ColorMatrix()));
+
+        // Create a RenderEffect for blurring
+        RenderEffect blurEffect = RenderEffect.createBlurEffect(10f, 10f, Shader.TileMode.CLAMP);
+        paint.setRenderEffect(blurEffect);
+
+        // Draw the original bitmap onto the blurred canvas with the blur effect
         canvas.drawBitmap(src, 0, 0, paint);
 
-        // Apply blur
-        RenderScript rs = null;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
-            rs = RenderScript.create(activity);
-            androidx.renderscript.Allocation input = androidx.renderscript.Allocation.createFromBitmap(rs, glow);
-            androidx.renderscript.Allocation output = androidx.renderscript.Allocation.createTyped(rs, input.getType());
-            androidx.renderscript.ScriptIntrinsicBlur blur = androidx.renderscript.ScriptIntrinsicBlur.create(rs, androidx.renderscript.Element.U8_4(rs));
-            blur.setRadius(10f);
-            blur.setInput(input);
-            blur.forEach(output);
-            output.copyTo(glow);
-            rs.destroy();
-        }
-
-        // Blend the glow with the original image
-        Bitmap finalImage = src.copy(src.getConfig(), true);
+        // Create a new bitmap to hold the final image
+        Bitmap finalImage = Bitmap.createBitmap(src.getWidth(), src.getHeight(), src.getConfig());
         Canvas finalCanvas = new Canvas(finalImage);
         Paint blendPaint = new Paint();
         blendPaint.setAlpha(80); // Adjust opacity as needed
-        finalCanvas.drawBitmap(glow, 0, 0, blendPaint);
+
+        // Draw the original image
+        finalCanvas.drawBitmap(src, 0, 0, null);
+
+        // Overlay the blurred image to create the halation effect
+        finalCanvas.drawBitmap(blurredBitmap, 0, 0, blendPaint);
+
+        // Recycle the intermediate blurred bitmap to free memory
+        blurredBitmap.recycle();
+
         return finalImage;
     }
 
@@ -468,7 +474,7 @@ public class Chromara extends CordovaPlugin {
         }
     }
 
-    private class SurfaceTextureListener implements TextureView.SurfaceTextureListener {
+    private class SurfaceTextureListenerImpl implements TextureView.SurfaceTextureListener {
         @Override
         public void onSurfaceTextureAvailable(@NonNull SurfaceTexture surface, int width, int height) {
             openCamera();
